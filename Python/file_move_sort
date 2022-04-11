@@ -13,20 +13,13 @@ def has_hidden_attribute(filepath):
 def input_directory_names():
     """Collects Path of source and destination directories from user"""
     # user input prompt
-    # src = input(r"Please enter absolute path of source folder: ")
-    # dst = input(r"Please enter absolute path of destination folder: ")
-
-    # temporary assignment
-    src = r"C:\Users\Kyle\Desktop\test_source"
-    dst = r"C:\Users\Kyle\Desktop\test_destination"
-
+    src = input(r"Please enter absolute path of source folder: ")
+    dst = input(r"Please enter absolute path of destination folder: ")
     while not os.path.exists(src) and not os.path.exists(dst):
         print(f"Source: {src}, Destination: {dst} are not valid directory paths.")
         src = input(r'Please enter a valid source path: ')
         dst = input(r'Please enter a valid destination path: ')
-
-    # replace later
-    return src, src
+    return src, dst
 
 
 def create_file_ext_dir(directory):
@@ -42,15 +35,17 @@ def create_file_ext_dir(directory):
 
 def create_dst_dir_and_list(ext_dict, dst):
     """For each unique file extension in a given dictionary, create a directory to house them"""
+    # while creating new directories, add their paths to list
     new_list = []
     for key in ext_dict.keys():
         if key == "":
             continue
         # define sorted folder names
+        # note: changes here should be reflected in later used regex
         folder_name = f"{key[1:]} Files"
         dir_path = os.path.join(dst, folder_name)
         new_list.append(dir_path)
-        # create directory to sort files into if it doesn't already exist
+        # create new directories
         try:
             os.mkdir(dir_path)
         except FileExistsError:
@@ -64,15 +59,6 @@ def create_abs_path_list(directory):
     for f in os.listdir(directory):
         f = os.path.join(directory, f)
         new_list.append(f)
-    return new_list
-
-
-def clean_dst_abs_path_list(dst_paths):
-    """Clean the destination path list of non-folder entries"""
-    new_list = []
-    for path in dst_paths:
-        if os.path.isdir(path):
-            new_list.append(path)
     return new_list
 
 
