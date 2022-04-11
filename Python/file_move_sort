@@ -1,0 +1,122 @@
+import os
+import pathlib
+import re
+import shutil
+import stat
+
+
+def has_hidden_attribute(filepath):
+    """Returns True if a given file is recognized as hidden"""
+    return bool(os.stat(filepath).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN)
+
+
+def input_directory_names():
+    """Collects Path of source and destination directories from user"""
+    # user input prompt
+    # src = input(r"Please enter absolute path of source folder: ")
+    # dst = input(r"Please enter absolute path of destination folder: ")
+
+    # temporary assignment
+    src = r"C:\Users\Kyle\Desktop\test_source"
+    dst = r"C:\Users\Kyle\Desktop\test_destination"
+
+    while not os.path.exists(src) and not os.path.exists(dst):
+        print(f"Source: {src}, Destination: {dst} are not valid directory paths.")
+        src = input(r'Please enter a valid source path: ')
+        dst = input(r'Please enter a valid destination path: ')
+
+    # replace later
+    return src, src
+
+
+def create_file_ext_dir(directory):
+    """Generates dictionary which defines occurrences of extensions in a given directory"""
+    src_files = os.listdir(directory)
+    ext_dict = {}
+    for file in src_files:
+        if not has_hidden_attribute(os.path.join(directory, file)):
+            file_ext = pathlib.Path(file).suffix
+            ext_dict[file_ext] = ext_dict.get(file_ext, 0) + 1
+    return ext_dict
+
+
+def create_dst_dir_and_list(ext_dict, dst):
+    """For each unique file extension in a given dictionary, create a directory to house them"""
+    new_list = []
+    for key in ext_dict.keys():
+        if key == "":
+            continue
+        # define sorted folder names
+        folder_name = f"{key[1:]} Files"
+        dir_path = os.path.join(dst, folder_name)
+        new_list.append(dir_path)
+        # create directory to sort files into if it doesn't already exist
+        try:
+            os.mkdir(dir_path)
+        except FileExistsError:
+            continue
+    return new_list
+
+
+def create_abs_path_list(directory):
+    """Given a directory, return a list with the absolute path of each file"""
+    new_list = []
+    for f in os.listdir(directory):
+        f = os.path.join(directory, f)
+        new_list.append(f)
+    return new_list
+
+
+def clean_dst_abs_path_list(dst_paths):
+    """Clean the destination path list of non-folder entries"""
+    new_list = []
+    for path in dst_paths:
+        if os.path.isdir(path):
+            new_list.append(path)
+    return new_list
+
+
+def move_file(filepath, dst, dst_dirs, dst_files):
+    """Move a given file to its destination, accounting for duplicates and hidden files"""
+    # separate filepath into name and extension for later use
+    split_filename = os.path.splitext(filepath)
+    file_ext = split_filename[1]
+    # take file's basename for quick comparison to existing files in destination directory
+    filepath_basename = os.path.basename(filepath)
+
+    # handle folders separately first
+    if file_ext == "":
+        if filepath_basename in dst_files:
+            print(f"Folder '{filepath_basename}' already exists in that directory.")
+        else:
+            folder_dst = os.path.join(dst, filepath_basename)
+            print(f"{filepath_basename} moved to {os.path.basename(folder_dst)}")
+            shutil.move(filepath, folder_dst)
+    # compare file extension to newly created directories so we can insert into them
+    for dst_folder in dst_dirs:
+        find_ext = re.search(r"([\w-]*) [\w]*$", dst_folder)
+        ext_to_match = find_ext[1]
+        if file_ext[1:] == ext_to_match:
+            try:
+                shutil.move(filepath, dst_folder)
+                print(f"{filepath_basename} moved to {os.path.basename(dst_folder)}")
+            except shutil.Error:
+                print(f"{filepath_basename} already exists in {os.path.basename(dst_folder)}.")
+
+
+def main():
+    # define directories
+    src_dir, dst_dir = input_directory_names()
+    # create a dictionary of file extensions for directories
+    src_dir_ext_dict = create_file_ext_dir(src_dir)
+    # create lists of absolute paths for source folder files
+    src_dir_file_list = create_abs_path_list(src_dir)
+    # create directories to place sorted files into and store their absolute paths
+    dst_dir_trim_file_list = create_dst_dir_and_list(src_dir_ext_dict, dst_dir)
+    # iterate through files in source folder, moving to destination directory
+    for file in src_dir_file_list:
+        move_file(file, dst_dir, dst_dir_trim_file_list, os.listdir(dst_dir))
+    print("-- Program exited successfully --")
+
+
+main()
