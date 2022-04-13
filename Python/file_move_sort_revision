@@ -12,7 +12,6 @@ def has_hidden_attribute(filepath):
 
 def input_directory_names():
     """Collects Path of source and destination directories from user"""
-    # user input prompt
     src = input(r"Please enter absolute path of source folder: ")
     dst = input(r"Please enter absolute path of destination folder: ")
     while not os.path.isdir(src) or not os.path.isdir(dst):
@@ -34,49 +33,45 @@ def create_file_ext_dir(directory):
 
 
 def create_dst_dir_and_list(ext_dict, dst):
-    """For each unique file extension in a given dictionary, create a directory to house them"""
-    # while creating new directories, add their paths to list
-    new_list = []
+    """Make a new directory for each extension in a directory, and return their absolute paths"""
+    new_dir_abs_paths = []
     for key in ext_dict.keys():
         if key == "":
             continue
-        # define sorted folder names
-        # note: changes here should be reflected in later used regex
+        # sorted folder naming conventions defined here
+        # note: changes here require an update to move_file regex expression
         folder_name = f"{key[1:]} Files"
         dir_path = os.path.join(dst, folder_name)
-        new_list.append(dir_path)
-        # create new directories
+        new_dir_abs_paths.append(dir_path)
         try:
             os.mkdir(dir_path)
         except FileExistsError:
             continue
-    return new_list
+    return new_dir_abs_paths
 
 
 def create_abs_path_list(directory):
     """Given a directory, return a list with the absolute path of each file"""
-    new_list = []
+    abs_paths = []
     for f in os.listdir(directory):
         f = os.path.join(directory, f)
-        new_list.append(f)
-    return new_list
+        abs_paths.append(f)
+    return abs_paths
 
 
 def move_file(filepath, dst, dst_dirs, dst_files):
-    """Move a given file to its destination, accounting for duplicates and hidden files"""
+    """Move a given file to its destination, accounting for duplicates"""
+    was_moved = False
     # separate filepath into name and extension for later use
     split_filename = os.path.splitext(filepath)
     file_ext = split_filename[1]
     # take file's basename for quick comparison to existing files in destination directory
-    filepath_basename = os.path.basename(filepath)
-
+    file_name = os.path.basename(filepath)
     # handle folders separately first
     if file_ext == "":
-        if filepath_basename in dst_files:
-            print(f"Folder '{filepath_basename}' already exists in that directory.")
-        else:
-            folder_dst = os.path.join(dst, filepath_basename)
-            print(f"{filepath_basename} moved to {os.path.basename(folder_dst)}")
+        if file_name not in dst_files:
+            folder_dst = os.path.join(dst, file_name)
+            was_moved = True
             shutil.move(filepath, folder_dst)
     # compare file extension to newly created directories so we can insert into them
     for dst_folder in dst_dirs:
@@ -85,9 +80,10 @@ def move_file(filepath, dst, dst_dirs, dst_files):
         if file_ext[1:] == ext_to_match:
             try:
                 shutil.move(filepath, dst_folder)
-                print(f"{filepath_basename} moved to {os.path.basename(dst_folder)}")
+                was_moved = True
             except shutil.Error:
-                print(f"{filepath_basename} already exists in {os.path.basename(dst_folder)}.")
+                pass
+    return file_name, was_moved
 
 
 def main():
@@ -100,9 +96,13 @@ def main():
     # create directories to place sorted files into and store their absolute paths
     dst_dir_trim_file_list = create_dst_dir_and_list(src_dir_ext_dict, dst_dir)
     # iterate through files in source folder, moving to destination directory
+    files_moved = []
+    files_unmoved = []
     for file in src_dir_file_list:
-        move_file(file, dst_dir, dst_dir_trim_file_list, os.listdir(dst_dir))
-    print("-- Program exited successfully --")
+        filename, move_successful = move_file(file, dst_dir, dst_dir_trim_file_list, os.listdir(dst_dir))
+        files_moved.append(filename) if move_successful else files_unmoved.append(filename)
+    print(f"{len(files_moved)} files/directories were transferred to '{dst_dir}' and sorted.\n{files_moved}")
+    print(f"{len(files_unmoved)} files/directories were left unaffected, remaining at '{src_dir}'.\n{files_unmoved}")
 
 
 main()
