@@ -15,7 +15,7 @@ def input_directory_names():
     # user input prompt
     src = input(r"Please enter absolute path of source folder: ")
     dst = input(r"Please enter absolute path of destination folder: ")
-    while not os.path.exists(src) and not os.path.exists(dst):
+    while not os.path.isdir(src) or not os.path.isdir(dst):
         print(f"Source: {src}, Destination: {dst} are not valid directory paths.")
         src = input(r'Please enter a valid source path: ')
         dst = input(r'Please enter a valid destination path: ')
