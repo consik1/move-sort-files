@@ -105,4 +105,5 @@ def main():
     print(f"{len(files_unmoved)} files/directories were left unaffected, remaining at '{src_dir}'.\n{files_unmoved}")
 
 
-main()
+if __name__ == "__main__":
+    main()
