@@ -3,4 +3,4 @@ A collection of side-projects that I've been working on to practice interacting 
 
 PYTHON
 file_move_sort
-short script which moves files from a source directory and moves them to a destination directory where they are sorted by extension into new folders
+moves files from a defined directory to another where they are then sorted into new folders based on extension
